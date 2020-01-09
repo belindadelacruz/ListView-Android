@@ -1,6 +1,16 @@
 package com.example.aplicacion01.models;
 
 import java.util.ArrayList;
+import com.android.volley.Request;
+import com.android.volley.VolleyError;
+import com.android.volley.Response;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.example.aplicacion01.MainActivity;
+import com.example.aplicacion01.helpers.QueueUtils;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 public class Contacto {
     public String phone;
@@ -25,4 +35,42 @@ public class Contacto {
         collection.add(new Contacto("943514313", "Paisaje","https://image.freepik.com/foto-gratis/mujeres-montana-tomar-foto-telefono-inteligente_33807-112.jpg"));
         return collection;
     }
+
+    public static void injectContactsFromCloud(final QueueUtils.QueueObject o,
+                                               final ArrayList<Contacto> contactos,
+                                               final MainActivity _interface) {
+        String url = "http://fipo.equisd.com/api/users.json";
+        JsonObjectRequest jsonObjectRequest = new JsonObjectRequest
+                (Request.Method.GET, url, null, new Response.Listener<JSONObject>() {
+
+                    @Override
+                    public void onResponse(JSONObject response) {
+                        if (response.has("objects")) {
+
+                            try {
+                                JSONArray list = response.getJSONArray("objects");
+                                for (int i=0; i < list.length(); i++) {
+                                    JSONObject o = list.getJSONObject(i);
+                                    contactos.add(new Contacto(o.getString("first_name"),
+                                            o.getString("last_name"),"" ));
+                                }
+
+                            } catch (JSONException e) {
+                                e.printStackTrace();
+                            }
+                            _interface.refreshList(); // Esta función debemos implementarla
+                            // en nuestro activity
+                        }
+                    }
+                }, new Response.ErrorListener() {
+
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+
+                    }
+                });
+        o.addToRequestQueue(jsonObjectRequest);
+    }
+
+
 }
